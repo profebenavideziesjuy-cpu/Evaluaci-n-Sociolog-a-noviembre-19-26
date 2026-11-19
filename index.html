@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Evaluación Integradora: Red Conceptual de Sociología Clásica</title>
+    
+    <!-- Tailwind CSS para diseño responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Konva.js para el lienzo interactivo, arrastrar y soltar y conectores de red -->
+    <script src="https://unpkg.com/konva@9.3.6/konva.min.js"></script>
+    
+    <!-- Tipografía Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f1f5f9;
+            color: #0f172a;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas-wrapper {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 32px 32px;
+            touch-action: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        @keyframes pulseUrgent {
+            0%, 100% { background-color: #991b1b; border-color: #fca5a5; }
+            50% { background-color: #dc2626; border-color: #ffffff; }
+        }
+        .timer-urgent {
+            animation: pulseUrgent 1.5s infinite;
+        }
+
+        @media print {
+            body { overflow: visible !important; background: #ffffff !important; }
+            #welcome-screen, #game-screen, #connector-modal, #confirm-modal, #toast-message { display: none !important; }
+            #result-modal { position: static !important; background: transparent !important; padding: 0 !important; display: block !important; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col">
+
+    <!-- ===================================================================== -->
+    <!-- 1. PANTALLA DE BIENVENIDA E IDENTIFICACIÓN                            -->
+    <!-- ===================================================================== -->
+    <div id="welcome-screen" class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-auto">
+            <div class="bg-slate-900 px-6 py-6 text-white border-b border-slate-800">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-900/80 border border-blue-700 text-blue-200 text-xs font-semibold mb-3">
+                    <span>Evaluación Integradora • Red Conceptual Flexible</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Sociología Clásica</h1>
+                <p class="text-slate-300 text-sm mt-1.5 leading-relaxed">
+                    Émile Durkheim • Karl Marx • Max Weber e Integración Teórica
+                </p>
+            </div>
+
+            <form id="student-form" class="p-6 sm:p-7 space-y-5" novalidate>
+                <div class="bg-blue-50/80 border border-blue-200 rounded-xl p-4 text-xs sm:text-sm text-slate-700 space-y-1.5">
+                    <p class="font-bold text-slate-900">Modalidad de Red Flexible (34 Nodos):</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                        <li>Dispones de <strong>80 minutos</strong> para articular los conceptos de Durkheim, Marx, Weber e Integración.</li>
+                        <li>Organiza los nodos libremente en cada conjunto y traza <strong>múltiples flechas entrantes y salientes</strong>.</li>
+                        <li>Criterios: <strong>+10 pts</strong> por conexión válida (específica o dentro del mismo paradigma) y <strong>+5 pts</strong> por cada nodo conectado válidamente. Aprobación con <strong>70% o más</strong>.</li>
+                    </ul>
+                </div>
+
+                <div id="form-error" class="hidden bg-red-50 border border-red-300 text-red-800 text-xs sm:text-sm px-4 py-3 rounded-xl font-medium">
+                    Por favor, completa todos los campos obligatorios antes de comenzar.
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="student-name" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Nombre *</label>
+                        <input type="text" id="student-name" required autocomplete="given-name" placeholder="Ej. María"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition">
+                    </div>
+                    <div>
+                        <label for="student-lastname" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Apellido *</label>
+                        <input type="text" id="student-lastname" required autocomplete="family-name" placeholder="Ej. González"
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="student-dni" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Documento de Identidad *</label>
+                    <input type="text" id="student-dni" required inputmode="numeric" placeholder="Ej. 40123456"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3.5 px-6 rounded-xl bg-blue-700 hover:bg-blue-800 active:bg-blue-900 text-white font-bold text-sm sm:text-base shadow-lg shadow-blue-900/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Comenzar Evaluación (80 min)</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 2. ENTORNO PRINCIPAL DEL JUEGO (LIENZO DE RED FLEXIBLE)               -->
+    <!-- ===================================================================== -->
+    <div id="game-screen" class="hidden flex-col h-full w-full">
+        
+        <!-- Encabezado Superior -->
+        <header class="bg-slate-900 text-white border-b border-slate-700 px-3 py-2.5 sm:px-5 sm:py-3 flex flex-wrap items-center justify-between gap-2 z-20 shrink-0 shadow-sm">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-lg bg-blue-900 border border-blue-700 text-blue-100 flex items-center justify-center font-bold text-xs sm:text-sm shrink-0">
+                    SC
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-xs sm:text-sm font-bold text-white truncate">Red Conceptual: Durkheim, Marx y Weber</h2>
+                    <p id="header-student-info" class="text-[11px] sm:text-xs text-slate-300 truncate">Estudiante: —</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3 ml-auto">
+                <div class="hidden md:flex items-center gap-1.5 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <span>Conexiones: <strong id="connections-count" class="text-white">0</strong></span>
+                </div>
+
+                <!-- Temporizador de 80 minutos -->
+                <div id="timer-box" class="flex items-center gap-1.5 bg-slate-800 border border-slate-600 text-slate-100 px-3 py-1.5 rounded-lg font-mono text-sm sm:text-base font-bold shadow-inner" title="Tiempo restante (80 minutos)">
+                    <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span id="timer-display">80:00</span>
+                </div>
+
+                <button id="btn-finish" type="button"
+                    class="px-3.5 py-2 sm:px-5 sm:py-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs sm:text-sm shadow-md border border-blue-400/40 transition flex items-center gap-1.5 cursor-pointer shrink-0">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Finalizar</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Barra de Herramientas y Navegación del Lienzo -->
+        <div class="bg-white border-b border-slate-200 px-3 py-1.5 sm:px-5 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 z-10 shrink-0">
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 font-medium text-slate-700">
+                    <span class="w-3 h-3 rounded-full bg-blue-700 inline-block border border-white shadow-xs"></span>
+                    Arrastra desde el círculo azul de un nodo hacia otro para conectar (múltiples entradas/salidas permitidas)
+                </span>
+                <span class="hidden lg:inline text-slate-400">|</span>
+                <span class="hidden lg:inline text-slate-500">Toca una flecha para editar su conector o eliminarla</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 ml-auto">
+                <button id="btn-toggle-venn" type="button" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 border border-blue-300 text-blue-800 font-semibold transition cursor-pointer" title="Mostrar u ocultar los 3 diagramas de Venn">
+                    Diagramas de Venn: ON
+                </button>
+                <button id="btn-scatter" type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium transition cursor-pointer">
+                    Reordenar Nodos
+                </button>
+                <div class="flex items-center bg-slate-100 border border-slate-300 rounded-lg overflow-hidden">
+                    <button id="btn-zoom-out" type="button" class="px-2.5 py-1 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer" title="Alejar">−</button>
+                    <span id="zoom-level" class="px-2 text-[11px] font-mono text-slate-700 border-x border-slate-300">100%</span>
+                    <button id="btn-zoom-in" type="button" class="px-2.5 py-1 hover:bg-slate-200 font-bold text-slate-700 cursor-pointer" title="Acercar">+</button>
+                </div>
+                <button id="btn-reset-view" type="button" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-medium transition cursor-pointer">
+                    Centrar
+                </button>
+            </div>
+        </div>
+
+        <!-- Lienzo Interactivo Konva.js -->
+        <main id="canvas-wrapper" class="relative flex-1 w-full h-full overflow-hidden">
+            <div id="konva-container" class="w-full h-full"></div>
+        </main>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 3. MODAL: SELECCIÓN DE CONECTOR LÓGICO                                -->
+    <!-- ===================================================================== -->
+    <div id="connector-modal" class="hidden fixed inset-0 z-40 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-300 overflow-hidden flex flex-col">
+            <div class="px-5 py-4 bg-slate-900 text-white border-b border-slate-700 flex items-center justify-between shrink-0">
+                <h3 class="font-bold text-white text-sm sm:text-base">Seleccionar Conector</h3>
+                <button id="btn-close-connector-modal" type="button" class="text-slate-300 hover:text-white p-1 rounded-lg cursor-pointer">✕</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="bg-slate-100 border border-slate-300 rounded-xl p-3 flex items-center justify-between gap-2 text-xs sm:text-sm">
+                    <span id="modal-source-label" class="font-bold text-slate-900 truncate">Origen</span>
+                    <span class="text-blue-600 font-bold">➔</span>
+                    <span id="modal-target-label" class="font-bold text-slate-900 truncate">Destino</span>
+                </div>
+                <div id="connector-options-list" class="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1"></div>
+                <div class="flex items-center justify-between pt-3 border-t border-slate-200 gap-2">
+                    <button id="btn-delete-connection" type="button" class="hidden px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-semibold text-xs cursor-pointer">
+                        Eliminar flecha
+                    </button>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <button id="btn-cancel-connector" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs cursor-pointer">Cancelar</button>
+                        <button id="btn-save-connector" type="button" class="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-sm cursor-pointer">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 4. MODAL: CONFIRMACIÓN DE ENTREGA                                     -->
+    <!-- ===================================================================== -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-40 bg-slate-900/65 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-300 p-6 space-y-4">
+            <h3 class="font-bold text-slate-900 text-base">¿Finalizar y validar evaluación?</h3>
+            <p class="text-xs sm:text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                Has trazado <strong id="confirm-conn-count" class="text-slate-900">0</strong> flechas en tu red conceptual. Una vez enviada la evaluación no podrás modificar el mapa.
+            </p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="btn-cancel-finish" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs cursor-pointer">Volver al lienzo</button>
+                <button id="btn-confirm-finish" type="button" class="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-sm cursor-pointer">Sí, Finalizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- 5. MODAL: RESULTADOS FINALES                                          -->
+    <!-- ===================================================================== -->
+    <div id="result-modal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-300 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+            <div class="px-6 py-5 bg-slate-900 text-white flex items-center justify-between shrink-0">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-bold">Resultado de Evaluación Integradora</h2>
+                    <p id="result-student-header" class="text-xs text-slate-300 mt-0.5">Estudiante</p>
+                </div>
+                <div id="result-badge" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-blue-600 text-white">EVALUADO</div>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div id="result-banner" class="rounded-xl p-4 border text-center">
+                    <div id="result-status-text" class="text-xl font-extrabold">—</div>
+                    <div id="result-score-text" class="text-base font-bold mt-1">Puntaje Total: 0 pts</div>
+                    <div id="result-threshold-note" class="text-xs mt-1 opacity-80">Umbral de aprobación: 70% o más del puntaje máximo posible</div>
+                </div>
+
+                <!-- Desglose detallado del puntaje flexible -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                        <div class="text-[11px] font-bold uppercase text-emerald-800">Conexiones Válidas</div>
+                        <div id="breakdown-valid-conns" class="text-sm font-extrabold text-emerald-950 mt-0.5">0 (+0 pts)</div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                        <div class="text-[11px] font-bold uppercase text-blue-800">Nodos Conectados</div>
+                        <div id="breakdown-valid-nodes" class="text-sm font-extrabold text-blue-950 mt-0.5">0 / 34 (+0 pts)</div>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-3">
+                        <div class="text-[11px] font-bold uppercase text-red-800">Conexiones Inválidas</div>
+                        <div id="breakdown-invalid-conns" class="text-sm font-extrabold text-red-950 mt-0.5">0 (0 pts)</div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Revisión de conexiones realizadas:</h4>
+                    <div id="feedback-list" class="space-y-1.5 max-h-52 overflow-y-auto pr-1 text-xs"></div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-200">
+                    <button id="btn-review-board" type="button" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs cursor-pointer">
+                        Ver Mapa Evaluado
+                    </button>
+                    <button id="btn-print-result" type="button" class="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs shadow-sm cursor-pointer">
+                        Imprimir / Guardar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Flotante -->
+    <div id="toast-message" class="hidden fixed bottom-16 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 transition-opacity duration-300">
+        Mensaje
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- LÓGICA DE RED FLEXIBLE Y EVALUACIÓN                                   -->
+    <!-- ===================================================================== -->
+    <script>
+        // Pega aquí la URL de implementación de tu Google Apps Script (/exec)
+        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyiZsmpeuCYYyALJyjoPaTQ2OzMmBjMbc2-R4yTOBvh8Nl7urZNyQQoLHlLFnpCyiEGlA/exec";
+
+        // Catálogo completo de 34 nodos únicos con su paradigma asignado
+        const NODES_DATA = [
+            // Durkheim (10 propios + Orden Social compartido con Integración)
+            { id: "analogia_organica", label: "Analogía Orgánica", paradigm: "durkheim" },
+            { id: "integracion_social", label: "Integración Social", paradigm: "durkheim" },
+            { id: "solidaridad_mecanica", label: "Solidaridad Mecánica", paradigm: "durkheim" },
+            { id: "solidaridad_organica", label: "Solidaridad Orgánica", paradigm: "durkheim" },
+            { id: "anomia_social", label: "Anomia Social", paradigm: "durkheim" },
+            { id: "metodo_sociologico", label: "Método Sociológico", paradigm: "durkheim" },
+            { id: "hechos_sociales", label: "Hechos Sociales", paradigm: "durkheim" },
+            { id: "division_trabajo", label: "División del Trabajo", paradigm: "durkheim" },
+            { id: "patologias_sociales", label: "Patologías Sociales", paradigm: "durkheim" },
+            { id: "metodo_estadistico", label: "Método Estadístico", paradigm: "durkheim" },
+
+            // Marx (9 nodos)
+            { id: "materialismo_historico", label: "Materialismo Histórico", paradigm: "marx" },
+            { id: "infraestructura", label: "Infraestructura", paradigm: "marx" },
+            { id: "superestructura", label: "Superestructura", paradigm: "marx" },
+            { id: "lucha_clases", label: "Lucha de Clases", paradigm: "marx" },
+            { id: "dialectica_materialista", label: "Dialéctica Materialista", paradigm: "marx" },
+            { id: "fetichismo_mercancia", label: "Fetichismo de la Mercancía", paradigm: "marx" },
+            { id: "plusvalia", label: "Plusvalía", paradigm: "marx" },
+            { id: "alienacion", label: "Alienación", paradigm: "marx" },
+            { id: "modo_produccion", label: "Modo de Producción", paradigm: "marx" },
+
+            // Weber (11 nodos)
+            { id: "accion_social", label: "Acción Social", paradigm: "weber" },
+            { id: "tipos_ideales", label: "Tipos Ideales", paradigm: "weber" },
+            { id: "racional_fines", label: "Racional con arreglo a fines", paradigm: "weber" },
+            { id: "racional_valores", label: "Racional con arreglo a valores", paradigm: "weber" },
+            { id: "afectiva", label: "Afectiva", paradigm: "weber" },
+            { id: "tradicional", label: "Tradicional", paradigm: "weber" },
+            { id: "metodo_tipos_ideales", label: "Método de los Tipos Ideales", paradigm: "weber" },
+            { id: "sentido_subjetivo", label: "Sentido Subjetivo", paradigm: "weber" },
+            { id: "racionalizacion", label: "Racionalización", paradigm: "weber" },
+            { id: "burocracia", label: "Burocracia", paradigm: "weber" },
+            { id: "desencantamiento_mundo", label: "Desencantamiento del Mundo", paradigm: "weber" },
+
+            // Integración (5 nodos transversales, compartiendo Orden Social)
+            { id: "orden_social", label: "Orden Social", paradigm: "integracion" },
+            { id: "cambio_social", label: "Cambio Social", paradigm: "integracion" },
+            { id: "conflicto", label: "Conflicto", paradigm: "integracion" },
+            { id: "consenso", label: "Consenso", paradigm: "integracion" },
+            { id: "accion_individual", label: "Acción Individual", paradigm: "integracion" }
+        ];
+
+        const NODE_PARADIGM_MAP = Object.fromEntries(NODES_DATA.map(n => [n.id, n.paradigm]));
+
+        const CONNECTOR_LABELS = [
+            "determina a",
+            "explica",
+            "genera",
+            "se clasifica en",
+            "fundamenta",
+            "se opone a",
+            "se vincula con",
+            "impulsa",
+            "requiere",
+            "produce",
+            "se expresa en",
+            "condiciona"
+        ];
+
+        // Array de "Conexiones Válidas" (todas las bidireccionales o unidireccionales lógicamente aceptadas)
+        const VALID_CONNECTIONS = [
+            // Durkheim
+            ["analogia_organica", "orden_social"],
+            ["orden_social", "integracion_social"],
+            ["integracion_social", "solidaridad_mecanica"],
+            ["integracion_social", "solidaridad_organica"],
+            ["division_trabajo", "solidaridad_mecanica"],
+            ["division_trabajo", "solidaridad_organica"],
+            ["anomia_social", "patologias_sociales"],
+            ["orden_social", "anomia_social"],
+            ["hechos_sociales", "metodo_sociologico"],
+            ["metodo_sociologico", "metodo_estadistico"],
+
+            // Marx
+            ["materialismo_historico", "infraestructura"],
+            ["infraestructura", "superestructura"],
+            ["infraestructura", "modo_produccion"],
+            ["materialismo_historico", "lucha_clases"],
+            ["lucha_clases", "cambio_social"],
+            ["plusvalia", "alienacion"],
+            ["fetichismo_mercancia", "alienacion"],
+            ["dialectica_materialista", "materialismo_historico"],
+
+            // Weber
+            ["accion_social", "sentido_subjetivo"],
+            ["accion_social", "tipos_ideales"],
+            ["tipos_ideales", "racional_fines"],
+            ["tipos_ideales", "racional_valores"],
+            ["tipos_ideales", "afectiva"],
+            ["tipos_ideales", "tradicional"],
+            ["tipos_ideales", "metodo_tipos_ideales"],
+            ["racionalizacion", "burocracia"],
+            ["racionalizacion", "desencantamiento_mundo"],
+
+            // Integración
+            ["orden_social", "consenso"],
+            ["orden_social", "accion_individual"],
+            ["cambio_social", "lucha_clases"],
+            ["cambio_social", "racionalizacion"],
+            ["conflicto", "anomia_social"],
+            ["conflicto", "lucha_clases"]
+        ];
+
+        // Conjunto normalizado (par ordenado alfabéticamente) para validación bidireccional flexible
+        const VALID_PAIRS_SET = new Set(
+            VALID_CONNECTIONS.map(([a, b]) => [a, b].sort().join("::"))
+        );
+
+        // Segunda posibilidad de validez: pertenencia al mismo paradigma sociológico o articulación integradora válida
+        function isConnectionConceptuallyValid(fromId, toId) {
+            const pairKey = [fromId, toId].sort().join("::");
+            // Posibilidad 1: Está en el listado explícito de conexiones válidas
+            if (VALID_PAIRS_SET.has(pairKey)) return true;
+
+            const p1 = NODE_PARADIGM_MAP[fromId];
+            const p2 = NODE_PARADIGM_MAP[toId];
+            if (!p1 || !p2) return false;
+
+            // Posibilidad 2: Ambos conceptos pertenecen al mismo paradigma sociológico (Durkheim-Durkheim, Marx-Marx o Weber-Weber)
+            if (p1 === p2 && p1 !== "integracion") return true;
+
+            // Articulación válida entre nodos integradores y los paradigmas correspondientes
+            const ids = [fromId, toId];
+            if (ids.includes("orden_social") && (p1 === "durkheim" || p2 === "durkheim" || p1 === "integracion" && p2 === "integracion")) return true;
+            if (ids.includes("consenso") && (p1 === "durkheim" || p2 === "durkheim" || p1 === "integracion" && p2 === "integracion")) return true;
+            if (ids.includes("cambio_social") && (p1 === "marx" || p2 === "marx" || p1 === "weber" || p2 === "weber" || p1 === "integracion" && p2 === "integracion")) return true;
+            if (ids.includes("conflicto") && (p1 === "marx" || p2 === "marx" || p1 === "durkheim" || p2 === "durkheim" || p1 === "integracion" && p2 === "integracion")) return true;
+            if (ids.includes("accion_individual") && (p1 === "weber" || p2 === "weber" || p1 === "integracion" && p2 === "integracion")) return true;
+
+            return false;
+        }
+
+        const state = {
+            student: { name: "", lastname: "", dni: "" },
+            timeLeft: 80 * 60, // 80 minutos en segundos
+            timerInterval: null,
+            isFinished: false,
+            connections: [],
+            pendingConnection: null,
+            editingConnectionId: null,
+            selectedLabel: CONNECTOR_LABELS[0]
+        };
+
+        function showToast(message) {
+            const toast = document.getElementById("toast-message");
+            toast.textContent = message;
+            toast.classList.remove("hidden", "opacity-0");
+            toast.classList.add("opacity-100");
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove("opacity-100");
+                toast.classList.add("opacity-0");
+                setTimeout(() => toast.classList.add("hidden"), 300);
+            }, 3000);
+        }
+
+        function getNodeLabel(id) {
+            const node = NODES_DATA.find(n => n.id === id);
+            return node ? node.label : id;
+        }
+
+        function updateConnectionsCounter() {
+            document.getElementById("connections-count").textContent = state.connections.length;
+        }
+
+        // Validación de pantalla de bienvenida
+        document.getElementById("student-form").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const name = document.getElementById("student-name").value.trim();
+            const lastname = document.getElementById("student-lastname").value.trim();
+            const dni = document.getElementById("student-dni").value.trim();
+            const errorBox = document.getElementById("form-error");
+
+            if (!name || !lastname || !dni) {
+                errorBox.classList.remove("hidden");
+                return;
+            }
+
+            errorBox.classList.add("hidden");
+            state.student = { name, lastname, dni };
+            document.getElementById("header-student-info").textContent = `${name} ${lastname} • DNI: ${dni}`;
+
+            document.getElementById("welcome-screen").classList.add("hidden");
+            const gameScreen = document.getElementById("game-screen");
+            gameScreen.classList.remove("hidden");
+            gameScreen.classList.add("flex");
+
+            initKonvaBoard();
+            startTimer();
+        });
+
+        // Temporizador de 80 minutos
+        function startTimer() {
+            const display = document.getElementById("timer-display");
+            const timerBox = document.getElementById("timer-box");
+
+            state.timerInterval = setInterval(() => {
+                if (state.isFinished) {
+                    clearInterval(state.timerInterval);
+                    return;
+                }
+                state.timeLeft--;
+                const mins = Math.floor(state.timeLeft / 60);
+                const secs = state.timeLeft % 60;
+                display.textContent = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+
+                if (state.timeLeft === 10 * 60) {
+                    timerBox.classList.add("timer-urgent");
+                    showToast("Atención: Restan 10 minutos para finalizar.");
+                }
+
+                if (state.timeLeft <= 0) {
+                    clearInterval(state.timerInterval);
+                    evaluateAndFinish(true);
+                }
+            }, 1000);
+        }
+
+        // Lienzo interactivo Konva.js
+        let stage = null;
+        let vennLayer = null;
+        let edgesLayer = null;
+        let nodesLayer = null;
+        let tempLayer = null;
+        let showVennDiagrams = true;
+
+        const NODE_WIDTH = 210;
+        const NODE_HEIGHT = 66;
+        const nodeGroups = {};
+        let isDrawingArrow = false;
+        let arrowStartNodeId = null;
+        let tempArrowLine = null;
+        let highlightedTargetId = null;
+
+        // Definición geométrica de los 3 Diagramas de Venn SEPARADOS (sin intersección entre paradigmas)
+        const VENN_CIRCLES = [
+            {
+                id: "durkheim",
+                title: "PARADIGMA DE ÉMILE DURKHEIM",
+                subtitle: "Hechos Sociales • Solidaridad • Orden y Anomia",
+                x: 340,
+                y: 440,
+                radius: 360,
+                fill: "rgba(37, 99, 235, 0.08)",
+                stroke: "#3b82f6",
+                titleX: 340,
+                titleY: 110
+            },
+            {
+                id: "marx",
+                title: "PARADIGMA DE KARL MARX",
+                subtitle: "Materialismo Histórico • Lucha de Clases • Infraestructura",
+                x: 1130,
+                y: 440,
+                radius: 360,
+                fill: "rgba(225, 29, 72, 0.07)",
+                stroke: "#f43f5e",
+                titleX: 1130,
+                titleY: 110
+            },
+            {
+                id: "weber",
+                title: "PARADIGMA DE MAX WEBER",
+                subtitle: "Acción Social • Tipos Ideales • Racionalización y Burocracia",
+                x: 1920,
+                y: 440,
+                radius: 360,
+                fill: "rgba(13, 148, 136, 0.08)",
+                stroke: "#14b8a6",
+                titleX: 1920,
+                titleY: 110
+            }
+        ];
+
+        function drawVennDiagrams() {
+            if (!vennLayer) return;
+            vennLayer.destroyChildren();
+
+            if (!showVennDiagrams) {
+                vennLayer.batchDraw();
+                return;
+            }
+
+            // Dibujar los 3 círculos independientes de los paradigmas sociológicos
+            VENN_CIRCLES.forEach(c => {
+                const circle = new Konva.Circle({
+                    x: c.x,
+                    y: c.y,
+                    radius: c.radius,
+                    fill: c.fill,
+                    stroke: c.stroke,
+                    strokeWidth: 2.5,
+                    dash: [10, 6],
+                    listening: false
+                });
+
+                const titleLabel = new Konva.Text({
+                    x: c.titleX - 180,
+                    y: c.titleY,
+                    width: 360,
+                    text: c.title,
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 15,
+                    fontStyle: "800",
+                    fill: "#1e293b",
+                    align: "center",
+                    listening: false
+                });
+
+                const subLabel = new Konva.Text({
+                    x: c.titleX - 190,
+                    y: c.titleY + 20,
+                    width: 380,
+                    text: c.subtitle,
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 11.5,
+                    fontStyle: "600",
+                    fill: "#475569",
+                    align: "center",
+                    listening: false
+                });
+
+                vennLayer.add(circle);
+                vennLayer.add(titleLabel);
+                vennLayer.add(subLabel);
+            });
+
+            // Zona separada inferior para los nodos de Integración Teórica
+            const integrationBox = new Konva.Rect({
+                x: 580,
+                y: 845,
+                width: 1100,
+                height: 150,
+                fill: "rgba(100, 116, 139, 0.06)",
+                stroke: "#94a3b8",
+                strokeWidth: 2,
+                dash: [8, 5],
+                cornerRadius: 16,
+                listening: false
+            });
+
+            const integrationText = new Konva.Text({
+                x: 580,
+                y: 855,
+                width: 1100,
+                text: "EJES DE INTEGRACIÓN TEÓRICA (Orden Social • Cambio Social • Conflicto • Consenso • Acción Individual)",
+                fontFamily: "Inter, sans-serif",
+                fontSize: 12,
+                fontStyle: "700",
+                fill: "#334155",
+                align: "center",
+                listening: false
+            });
+
+            vennLayer.add(integrationBox);
+            vennLayer.add(integrationText);
+            vennLayer.batchDraw();
+        }
+
+        function initKonvaBoard() {
+            const container = document.getElementById("konva-container");
+            stage = new Konva.Stage({
+                container: "konva-container",
+                width: container.clientWidth,
+                height: container.clientHeight,
+                draggable: true
+            });
+
+            vennLayer = new Konva.Layer();
+            edgesLayer = new Konva.Layer();
+            nodesLayer = new Konva.Layer();
+            tempLayer = new Konva.Layer();
+
+            stage.add(vennLayer);
+            stage.add(edgesLayer);
+            stage.add(nodesLayer);
+            stage.add(tempLayer);
+
+            drawVennDiagrams();
+
+            // Dispersar los 34 nodos en filas superiores e inferiores fuera de los 3 diagramas separados
+            const shuffled = [...NODES_DATA].sort(() => Math.random() - 0.5);
+            shuffled.forEach((nodeData, index) => {
+                const isTopBank = index < 18;
+                const localIdx = isTopBank ? index : index - 18;
+                const col = isTopBank ? (localIdx % 9) : (localIdx % 8);
+                const row = isTopBank ? Math.floor(localIdx / 9) : Math.floor(localIdx / 8);
+
+                const baseX = isTopBank ? 40 + col * 245 : 150 + col * 245;
+                const baseY = isTopBank ? -115 + row * 85 : 1030 + row * 85;
+                const jitterX = (Math.random() - 0.5) * 14;
+                const jitterY = (Math.random() - 0.5) * 10;
+
+                createConceptNode(nodeData, baseX + jitterX, baseY + jitterY);
+            });
+
+            fitBoardToViewport();
+
+            // Zoom con rueda del ratón
+            stage.on("wheel", (e) => {
+                e.evt.preventDefault();
+                const scaleBy = 1.08;
+                const oldScale = stage.scaleX();
+                const pointer = stage.getPointerPosition();
+                if (!pointer) return;
+                const mousePointTo = {
+                    x: (pointer.x - stage.x()) / oldScale,
+                    y: (pointer.y - stage.y()) / oldScale
+                };
+                const newScale = e.evt.deltaY > 0 ? Math.max(0.3, oldScale / scaleBy) : Math.min(1.8, oldScale * scaleBy);
+                stage.scale({ x: newScale, y: newScale });
+                stage.position({
+                    x: pointer.x - mousePointTo.x * newScale,
+                    y: pointer.y - mousePointTo.y * newScale
+                });
+                document.getElementById("zoom-level").textContent = `${Math.round(newScale * 100)}%`;
+            });
+
+            stage.on("mousemove touchmove", handlePointerMove);
+            stage.on("mouseup touchend", handlePointerUp);
+
+            window.addEventListener("resize", () => {
+                if (!stage) return;
+                const wrapper = document.getElementById("konva-container");
+                stage.width(wrapper.clientWidth);
+                stage.height(wrapper.clientHeight);
+            });
+        }
+
+        function createConceptNode(nodeData, x, y) {
+            const group = new Konva.Group({ x, y, draggable: true, id: nodeData.id });
+
+            const card = new Konva.Rect({
+                width: NODE_WIDTH,
+                height: NODE_HEIGHT,
+                fill: "#ffffff",
+                stroke: "#64748b",
+                strokeWidth: 2,
+                cornerRadius: 12,
+                shadowColor: "rgba(15, 23, 42, 0.12)",
+                shadowBlur: 8,
+                shadowOffset: { x: 0, y: 3 },
+                name: "nodeCard"
+            });
+
+            const text = new Konva.Text({
+                text: nodeData.label,
+                width: NODE_WIDTH - 34,
+                height: NODE_HEIGHT,
+                x: 10,
+                y: 0,
+                fontFamily: "Inter, sans-serif",
+                fontSize: 13.5,
+                fontStyle: "bold",
+                fill: "#0f172a",
+                align: "center",
+                verticalAlign: "middle",
+                listening: false
+            });
+
+            const port = new Konva.Circle({
+                x: NODE_WIDTH,
+                y: NODE_HEIGHT / 2,
+                radius: 11,
+                fill: "#1d4ed8",
+                stroke: "#ffffff",
+                strokeWidth: 2.5,
+                name: "nodePort"
+            });
+
+            group.add(card);
+            group.add(text);
+            group.add(port);
+
+            group.on("dragmove", () => redrawAllEdges());
+            group.on("dragend", () => redrawAllEdges());
+
+            const startConnection = (e) => {
+                e.cancelBubble = true;
+                if (state.isFinished) return;
+                isDrawingArrow = true;
+                arrowStartNodeId = nodeData.id;
+
+                const center = getNodeCenter(nodeData.id);
+                tempArrowLine = new Konva.Arrow({
+                    points: [center.x, center.y, center.x, center.y],
+                    pointerLength: 11,
+                    pointerWidth: 10,
+                    fill: "#1d4ed8",
+                    stroke: "#1d4ed8",
+                    strokeWidth: 3,
+                    dash: [6, 4],
+                    listening: false
+                });
+                tempLayer.add(tempArrowLine);
+                tempLayer.draw();
+            };
+
+            port.on("mousedown touchstart", startConnection);
+            nodesLayer.add(group);
+            nodeGroups[nodeData.id] = group;
+        }
+
+        function getRelativePointerPosition() {
+            const transform = stage.getAbsoluteTransform().copy();
+            transform.invert();
+            const pos = stage.getPointerPosition();
+            if (!pos) return null;
+            return transform.point(pos);
+        }
+
+        function handlePointerMove() {
+            if (!isDrawingArrow || !tempArrowLine) return;
+            const pos = getRelativePointerPosition();
+            if (!pos) return;
+            const startCenter = getNodeCenter(arrowStartNodeId);
+            tempArrowLine.points([startCenter.x, startCenter.y, pos.x, pos.y]);
+
+            const targetId = findNodeAtPoint(pos, arrowStartNodeId);
+            if (highlightedTargetId && highlightedTargetId !== targetId) {
+                resetNodeBorder(highlightedTargetId);
+                highlightedTargetId = null;
+            }
+            if (targetId) {
+                highlightedTargetId = targetId;
+                const card = nodeGroups[targetId].findOne(".nodeCard");
+                if (card) { card.stroke("#1d4ed8"); card.strokeWidth(3); }
+            }
+            tempLayer.batchDraw();
+        }
+
+        function handlePointerUp() {
+            if (!isDrawingArrow) return;
+            const pos = getRelativePointerPosition();
+            const targetId = pos ? findNodeAtPoint(pos, arrowStartNodeId) : highlightedTargetId;
+
+            if (highlightedTargetId) {
+                resetNodeBorder(highlightedTargetId);
+                highlightedTargetId = null;
+            }
+            if (tempArrowLine) {
+                tempArrowLine.destroy();
+                tempArrowLine = null;
+                tempLayer.draw();
+            }
+
+            isDrawingArrow = false;
+            const fromId = arrowStartNodeId;
+            arrowStartNodeId = null;
+
+            if (fromId && targetId && fromId !== targetId && !state.isFinished) {
+                openConnectorModal(fromId, targetId);
+            }
+        }
+
+        function resetNodeBorder(id) {
+            const card = nodeGroups[id]?.findOne(".nodeCard");
+            if (card && !state.isFinished) { card.stroke("#64748b"); card.strokeWidth(2); }
+        }
+
+        function findNodeAtPoint(pt, excludeId) {
+            for (const nd of NODES_DATA) {
+                if (nd.id === excludeId) continue;
+                const g = nodeGroups[nd.id];
+                if (!g) continue;
+                const x = g.x(), y = g.y();
+                if (pt.x >= x - 12 && pt.x <= x + NODE_WIDTH + 12 && pt.y >= y - 12 && pt.y <= y + NODE_HEIGHT + 12) {
+                    return nd.id;
+                }
+            }
+            return null;
+        }
+
+        function getNodeCenter(id) {
+            const g = nodeGroups[id];
+            return { x: g.x() + NODE_WIDTH / 2, y: g.y() + NODE_HEIGHT / 2 };
+        }
+
+        function getRectEdgeIntersection(center, target, width, height) {
+            const dx = target.x - center.x;
+            const dy = target.y - center.y;
+            if (dx === 0 && dy === 0) return center;
+            const halfW = width / 2 + 4;
+            const halfH = height / 2 + 4;
+            const scaleX = Math.abs(dx) > 0 ? halfW / Math.abs(dx) : Infinity;
+            const scaleY = Math.abs(dy) > 0 ? halfH / Math.abs(dy) : Infinity;
+            const scale = Math.min(scaleX, scaleY);
+            return { x: center.x + dx * scale, y: center.y + dy * scale };
+        }
+
+        function redrawAllEdges(validationMap = null) {
+            edgesLayer.destroyChildren();
+
+            state.connections.forEach(conn => {
+                const startCenter = getNodeCenter(conn.from);
+                const endCenter = getNodeCenter(conn.to);
+                const hasReverse = state.connections.some(c => c.from === conn.to && c.to === conn.from);
+
+                let strokeColor = "#334155";
+                let badgeBg = "#ffffff";
+                let badgeBorder = "#64748b";
+
+                if (validationMap && validationMap[conn.id]) {
+                    if (validationMap[conn.id] === "valid") {
+                        strokeColor = "#15803d"; badgeBg = "#f0fdf4"; badgeBorder = "#16a34a";
+                    } else {
+                        strokeColor = "#b91c1c"; badgeBg = "#fef2f2"; badgeBorder = "#dc2626";
+                    }
+                }
+
+                const edgeGroup = new Konva.Group();
+
+                if (hasReverse) {
+                    const dx = endCenter.x - startCenter.x;
+                    const dy = endCenter.y - startCenter.y;
+                    const dist = Math.hypot(dx, dy) || 1;
+                    const nx = -dy / dist;
+                    const ny = dx / dist;
+                    const curveOffset = 34;
+                    const ctrlPt = {
+                        x: (startCenter.x + endCenter.x) / 2 + nx * curveOffset,
+                        y: (startCenter.y + endCenter.y) / 2 + ny * curveOffset
+                    };
+                    const startPt = getRectEdgeIntersection(startCenter, ctrlPt, NODE_WIDTH, NODE_HEIGHT);
+                    const endPt = getRectEdgeIntersection(endCenter, ctrlPt, NODE_WIDTH, NODE_HEIGHT);
+
+                    const arrow = new Konva.Arrow({
+                        points: [startPt.x, startPt.y, ctrlPt.x, ctrlPt.y, endPt.x, endPt.y],
+                        tension: 0.45,
+                        pointerLength: 10,
+                        pointerWidth: 9,
+                        fill: strokeColor,
+                        stroke: strokeColor,
+                        strokeWidth: 2.5,
+                        hitStrokeWidth: 20
+                    });
+
+                    const badgeMid = {
+                        x: 0.25 * startPt.x + 0.5 * ctrlPt.x + 0.25 * endPt.x,
+                        y: 0.25 * startPt.y + 0.5 * ctrlPt.y + 0.25 * endPt.y
+                    };
+
+                    edgeGroup.add(arrow);
+                    addEdgeBadge(edgeGroup, badgeMid, conn.label, strokeColor, badgeBg, badgeBorder);
+                } else {
+                    const startPt = getRectEdgeIntersection(startCenter, endCenter, NODE_WIDTH, NODE_HEIGHT);
+                    const endPt = getRectEdgeIntersection(endCenter, startCenter, NODE_WIDTH, NODE_HEIGHT);
+
+                    const arrow = new Konva.Arrow({
+                        points: [startPt.x, startPt.y, endPt.x, endPt.y],
+                        pointerLength: 10,
+                        pointerWidth: 9,
+                        fill: strokeColor,
+                        stroke: strokeColor,
+                        strokeWidth: 2.5,
+                        hitStrokeWidth: 20
+                    });
+
+                    const midPt = { x: (startPt.x + endPt.x) / 2, y: (startPt.y + endPt.y) / 2 };
+                    edgeGroup.add(arrow);
+                    addEdgeBadge(edgeGroup, midPt, conn.label, strokeColor, badgeBg, badgeBorder);
+                }
+
+                edgeGroup.on("click tap", () => {
+                    if (state.isFinished) return;
+                    openConnectorModalForEdit(conn.id);
+                });
+
+                edgesLayer.add(edgeGroup);
+            });
+
+            edgesLayer.batchDraw();
+        }
+
+        function addEdgeBadge(group, midPt, labelText, textColor, bgColor, borderColor) {
+            const badgeWidth = Math.max(76, labelText.length * 6.5 + 16);
+            const badgeRect = new Konva.Rect({
+                x: midPt.x - badgeWidth / 2,
+                y: midPt.y - 11,
+                width: badgeWidth,
+                height: 22,
+                fill: bgColor,
+                stroke: borderColor,
+                strokeWidth: 1.5,
+                cornerRadius: 6
+            });
+            const badgeText = new Konva.Text({
+                x: midPt.x - badgeWidth / 2,
+                y: midPt.y - 11,
+                width: badgeWidth,
+                height: 22,
+                text: labelText,
+                fontFamily: "Inter, sans-serif",
+                fontSize: 11,
+                fontStyle: "600",
+                fill: textColor,
+                align: "center",
+                verticalAlign: "middle"
+            });
+            group.add(badgeRect);
+            group.add(badgeText);
+        }
+
+        function fitBoardToViewport() {
+            if (!stage) return;
+            const container = document.getElementById("konva-container");
+            const totalWorldWidth = 2360;
+            const totalWorldHeight = 1360;
+            const scale = Math.min(container.clientWidth / totalWorldWidth, container.clientHeight / totalWorldHeight, 0.92);
+            const finalScale = Math.max(0.28, scale);
+            stage.scale({ x: finalScale, y: finalScale });
+            const offsetX = (container.clientWidth - totalWorldWidth * finalScale) / 2 + 25 * finalScale;
+            const offsetY = Math.max(12, (container.clientHeight - totalWorldHeight * finalScale) / 2 + 125 * finalScale);
+            stage.position({ x: offsetX, y: offsetY });
+            document.getElementById("zoom-level").textContent = `${Math.round(finalScale * 100)}%`;
+        }
+
+        // Modal de conectores
+        const connectorModal = document.getElementById("connector-modal");
+        const optionsList = document.getElementById("connector-options-list");
+        const btnDeleteConn = document.getElementById("btn-delete-connection");
+
+        function openConnectorModal(fromId, toId) {
+            state.pendingConnection = { from: fromId, to: toId };
+            state.editingConnectionId = null;
+            state.selectedLabel = CONNECTOR_LABELS[0];
+            document.getElementById("modal-source-label").textContent = getNodeLabel(fromId);
+            document.getElementById("modal-target-label").textContent = getNodeLabel(toId);
+            btnDeleteConn.classList.add("hidden");
+            renderOptions();
+            connectorModal.classList.remove("hidden");
+        }
+
+        function openConnectorModalForEdit(connId) {
+            const conn = state.connections.find(c => c.id === connId);
+            if (!conn) return;
+            state.pendingConnection = null;
+            state.editingConnectionId = connId;
+            state.selectedLabel = conn.label;
+            document.getElementById("modal-source-label").textContent = getNodeLabel(conn.from);
+            document.getElementById("modal-target-label").textContent = getNodeLabel(conn.to);
+            btnDeleteConn.classList.remove("hidden");
+            renderOptions();
+            connectorModal.classList.remove("hidden");
+        }
+
+        function renderOptions() {
+            optionsList.innerHTML = "";
+            CONNECTOR_LABELS.forEach(text => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = `px-3 py-2 rounded-xl border text-left text-xs font-semibold cursor-pointer ${
+                    state.selectedLabel === text ? "bg-blue-700 text-white border-blue-700" : "bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300"
+                }`;
+                btn.textContent = text;
+                btn.onclick = () => { state.selectedLabel = text; renderOptions(); };
+                optionsList.appendChild(btn);
+            });
+        }
+
+        document.getElementById("btn-close-connector-modal").onclick = () => connectorModal.classList.add("hidden");
+        document.getElementById("btn-cancel-connector").onclick = () => connectorModal.classList.add("hidden");
+
+        document.getElementById("btn-save-connector").onclick = () => {
+            if (state.pendingConnection) {
+                const { from, to } = state.pendingConnection;
+                if (state.connections.some(c => c.from === from && c.to === to)) {
+                    showToast("Ya existe una flecha en ese sentido entre ambos nodos.");
+                    connectorModal.classList.add("hidden");
+                    return;
+                }
+                state.connections.push({ id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, from, to, label: state.selectedLabel });
+                showToast("Conexión agregada a la red.");
+            } else if (state.editingConnectionId) {
+                const conn = state.connections.find(c => c.id === state.editingConnectionId);
+                if (conn) conn.label = state.selectedLabel;
+                showToast("Conector actualizado.");
+            }
+            updateConnectionsCounter();
+            redrawAllEdges();
+            connectorModal.classList.add("hidden");
+        };
+
+        btnDeleteConn.onclick = () => {
+            state.connections = state.connections.filter(c => c.id !== state.editingConnectionId);
+            updateConnectionsCounter();
+            redrawAllEdges();
+            connectorModal.classList.add("hidden");
+            showToast("Conexión eliminada.");
+        };
+
+        // Confirmación y Validación Final
+        const confirmModal = document.getElementById("confirm-modal");
+        document.getElementById("btn-finish").onclick = () => {
+            if (state.isFinished) {
+                document.getElementById("result-modal").classList.remove("hidden");
+                return;
+            }
+            document.getElementById("confirm-conn-count").textContent = state.connections.length;
+            confirmModal.classList.remove("hidden");
+        };
+
+        document.getElementById("btn-cancel-finish").onclick = () => confirmModal.classList.add("hidden");
+        document.getElementById("btn-confirm-finish").onclick = () => {
+            confirmModal.classList.add("hidden");
+            evaluateAndFinish(false);
+        };
+
+        function evaluateAndFinish(timeExpired = false) {
+            if (state.isFinished) return;
+            state.isFinished = true;
+            clearInterval(state.timerInterval);
+
+            Object.values(nodeGroups).forEach(g => g.draggable(false));
+
+            let validConnsCount = 0;
+            let invalidConnsCount = 0;
+            const validationMap = {};
+            const feedbackEntries = [];
+            const countedPairs = new Set();
+            const validlyConnectedNodes = new Set();
+
+            // 1. Recorre todas las conexiones dibujadas por el estudiante (Modalidad exclusivamente sumativa y ampliada)
+            state.connections.forEach(conn => {
+                const pairKey = [conn.from, conn.to].sort().join("::");
+                const isValid = isConnectionConceptuallyValid(conn.from, conn.to);
+
+                if (isValid && !countedPairs.has(pairKey)) {
+                    validConnsCount++;
+                    countedPairs.add(pairKey);
+                    validlyConnectedNodes.add(conn.from);
+                    validlyConnectedNodes.add(conn.to);
+                    validationMap[conn.id] = "valid";
+                    feedbackEntries.push({
+                        valid: true,
+                        text: `${getNodeLabel(conn.from)} ➔ [${conn.label}] ➔ ${getNodeLabel(conn.to)}`,
+                        pts: "+10 pts"
+                    });
+                } else {
+                    invalidConnsCount++;
+                    validationMap[conn.id] = "invalid";
+                    feedbackEntries.push({
+                        valid: false,
+                        text: `${getNodeLabel(conn.from)} ➔ [${conn.label}] ➔ ${getNodeLabel(conn.to)}`,
+                        pts: "0 pts"
+                    });
+                }
+            });
+
+            // Destacar visualmente en el lienzo los nodos que participaron en al menos una conexión válida
+            NODES_DATA.forEach(nd => {
+                const card = nodeGroups[nd.id]?.findOne(".nodeCard");
+                if (!card) return;
+                if (validlyConnectedNodes.has(nd.id)) {
+                    card.fill("#f0fdf4");
+                    card.stroke("#16a34a");
+                    card.strokeWidth(2.5);
+                } else {
+                    card.fill("#f8fafc");
+                    card.stroke("#cbd5e1");
+                }
+            });
+            nodesLayer.batchDraw();
+
+            redrawAllEdges(validationMap);
+
+            // 2. Cálculo del puntaje sumativo:
+            // +10 por conexión válida, 0 por conexión inválida, +5 por cada nodo conectado al menos con un nodo válido
+            const connectionsPoints = validConnsCount * 10;
+            const nodesBonusPoints = validlyConnectedNodes.size * 5;
+            const totalScore = connectionsPoints + nodesBonusPoints;
+
+            // Puntaje máximo de referencia: red articulada base de 33 conexiones (+330 pts) + 34 nodos conectados (+170 pts) = 500 pts
+            const maxPossible = (VALID_PAIRS_SET.size * 10) + (NODES_DATA.length * 5);
+            const percentage = Math.min(100, Math.max(0, Math.round((totalScore / maxPossible) * 100)));
+            const passed = percentage >= 70;
+
+            document.getElementById("result-student-header").textContent =
+                `${state.student.name} ${state.student.lastname} • DNI: ${state.student.dni}${timeExpired ? " (Tiempo agotado)" : ""}`;
+
+            const badge = document.getElementById("result-badge");
+            const banner = document.getElementById("result-banner");
+            const statusText = document.getElementById("result-status-text");
+
+            if (passed) {
+                badge.textContent = "APROBADO";
+                badge.className = "px-3.5 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-emerald-600 text-white";
+                banner.className = "rounded-xl p-4 border text-center bg-emerald-50 border-emerald-200 text-emerald-950";
+                statusText.textContent = "¡Aprobado! Red Conceptual Válida";
+            } else {
+                badge.textContent = "NO APROBADO";
+                badge.className = "px-3.5 py-1.5 rounded-xl text-xs font-extrabold uppercase tracking-wider bg-red-600 text-white";
+                banner.className = "rounded-xl p-4 border text-center bg-red-50 border-red-200 text-red-950";
+                statusText.textContent = "No Aprobado — Puntaje insuficiente";
+            }
+
+            document.getElementById("result-score-text").textContent =
+                `Puntaje Total: ${totalScore} / ${maxPossible} pts (${percentage}%)`;
+
+            document.getElementById("breakdown-valid-conns").textContent =
+                `${validConnsCount} (+${connectionsPoints} pts)`;
+            document.getElementById("breakdown-valid-nodes").textContent =
+                `${validlyConnectedNodes.size} / ${NODES_DATA.length} (+${nodesBonusPoints} pts)`;
+            document.getElementById("breakdown-invalid-conns").textContent =
+                `${invalidConnsCount} (0 pts)`;
+
+            const list = document.getElementById("feedback-list");
+            list.innerHTML = "";
+            if (feedbackEntries.length === 0) {
+                list.innerHTML = `<div class="p-3 text-center text-slate-500">No se trazaron conexiones en el lienzo.</div>`;
+            } else {
+                feedbackEntries.forEach(item => {
+                    const row = document.createElement("div");
+                    row.className = `p-2.5 rounded-xl border flex justify-between items-center gap-2 ${
+                        item.valid ? "bg-emerald-50 border-emerald-200 text-emerald-950" : "bg-red-50 border-red-200 text-red-950"
+                    }`;
+                    row.innerHTML = `<span class="font-medium">${item.valid ? "✔" : "✘"} ${item.text}</span><span class="font-bold shrink-0">${item.pts}</span>`;
+                    list.appendChild(row);
+                });
+            }
+
+            document.getElementById("result-modal").classList.remove("hidden");
+
+            // Envío automático de resultados a Google Apps Script si la URL está configurada
+            if (GOOGLE_APPS_SCRIPT_URL && GOOGLE_APPS_SCRIPT_URL.startsWith("http")) {
+                const elapsedSecs = (80 * 60) - state.timeLeft;
+                const minsSpent = Math.floor(elapsedSecs / 60);
+                const secsSpent = elapsedSecs % 60;
+                const resumen = feedbackEntries.map(f => `${f.valid ? "[OK]" : "[ERR]"} ${f.text}`).join(" | ");
+
+                fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        nombre: state.student.name,
+                        apellido: state.student.lastname,
+                        documento: state.student.dni,
+                        puntaje: totalScore,
+                        puntajeMaximo: maxPossible,
+                        porcentaje: percentage,
+                        estado: passed ? "Aprobado" : "No Aprobado",
+                        tiempoEmpleado: `${minsSpent}m ${secsSpent}s`,
+                        conexiones: resumen || "Sin conexiones trazadas"
+                    })
+                }).catch(() => {});
+            }
+        }
+
+        // Botones auxiliares
+        document.getElementById("btn-review-board").onclick = () => document.getElementById("result-modal").classList.add("hidden");
+        document.getElementById("btn-print-result").onclick = () => window.print();
+        document.getElementById("btn-reset-view").onclick = fitBoardToViewport;
+
+        document.getElementById("btn-toggle-venn").onclick = () => {
+            showVennDiagrams = !showVennDiagrams;
+            const btn = document.getElementById("btn-toggle-venn");
+            btn.textContent = `Diagramas de Venn: ${showVennDiagrams ? "ON" : "OFF"}`;
+            drawVennDiagrams();
+        };
+
+        document.getElementById("btn-scatter").onclick = () => {
+            if (state.isFinished) return;
+            NODES_DATA.forEach((nodeData, index) => {
+                const g = nodeGroups[nodeData.id];
+                if (!g) return;
+                const isTopBank = index < 18;
+                const localIdx = isTopBank ? index : index - 18;
+                const col = isTopBank ? (localIdx % 9) : (localIdx % 8);
+                const row = isTopBank ? Math.floor(localIdx / 9) : Math.floor(localIdx / 8);
+                const baseX = isTopBank ? 40 + col * 245 : 150 + col * 245;
+                const baseY = isTopBank ? -115 + row * 85 : 1030 + row * 85;
+                g.position({ x: baseX, y: baseY });
+            });
+            redrawAllEdges();
+            fitBoardToViewport();
+            showToast("Nodos organizados alrededor de los tres paradigmas.");
+        };
+
+        document.getElementById("btn-zoom-in").onclick = () => {
+            if (!stage) return;
+            const newScale = Math.min(1.8, stage.scaleX() * 1.15);
+            stage.scale({ x: newScale, y: newScale });
+            document.getElementById("zoom-level").textContent = `${Math.round(newScale * 100)}%`;
+        };
+
+        document.getElementById("btn-zoom-out").onclick = () => {
+            if (!stage) return;
+            const newScale = Math.max(0.3, stage.scaleX() / 1.15);
+            stage.scale({ x: newScale, y: newScale });
+            document.getElementById("zoom-level").textContent = `${Math.round(newScale * 100)}%`;
+        };
+    </script>
+</body>
+</html>
